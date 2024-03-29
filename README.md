@@ -30,3 +30,22 @@ https://huggingface.co/blog/Valerii-Knowledgator/multi-label-classification
 https://discuss.huggingface.co/t/most-efficient-multi-label-classifier/9296
 
 https://paperswithcode.com/task/multi-label-text-classification
+
+# Git Large File Storage
+
+https://git-lfs.com/
+
+In each Git repository where you want to use Git LFS, select the file types you'd like Git LFS to manage (or directly edit your .gitattributes).
+
+```
+git lfs track "*.psd"
+```
+
+Now make sure .gitattributes is tracked:
+
+```
+git add .gitattributes
+```
+
+There is no step three. Just commit and push to GitHub as you normally would;
+
