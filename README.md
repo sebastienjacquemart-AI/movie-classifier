@@ -1,3 +1,5 @@
+TODO: train the model (100 hours... CUDA?)
+
 # movie-classifier
 
 ## Challenge Goal
