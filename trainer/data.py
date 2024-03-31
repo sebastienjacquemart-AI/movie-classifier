@@ -1,14 +1,18 @@
 import os
 import pandas as pd
+from sklearn.preprocessing import MultiLabelBinarizer
+
+from datasets import Dataset, DatasetDict
+from transformers import AutoTokenizer, DataCollatorWithPadding
 
 import trainer.boiler as boiler
 
 def create_train_and_test_dataframe(data_path):
     train_file = os.path.join(data_path, "train.csv")
-    test_file = os.path.join(data_path, "test.csv")
+    test_file = os.path.join(data_path, "test2.csv")
 
     train_df = pd.read_csv(train_file)
-    test_df = pd.read_csv(test_file)
+    test_df = pd.read_csv(test_file, delimiter=';')
 
     return train_df, test_df
 
@@ -43,15 +47,52 @@ def explore_data(train_df, test_df):
 
     return
 
-# @HuggingFace: Could I make package of this???
-def preprocess_labels(df):
-    # Split tags into separate columns
-    tags_split = df['tags'].str.get_dummies(sep=', ')
+def preprocess_function(classes, example):
+    text = example['synopsis']
+    if example["tags"] is not None:
+        all_labels = example['tags'].split(', ')
+    else: 
+        all_labels = []
+    labels = [0. for i in range(len(classes))]
+    for label in all_labels:
+        label_id = get_class2id(classes)[label]
+        labels[label_id] = 1.
 
-    # Merge the new columns with the original DataFrame
-    df = pd.concat([df, tags_split], axis=1)
+    example = get_tokenizer()(text, truncation=True)
+    example['labels'] = labels
+    
+    return example
 
-    # Drop the original 'tags' column if needed
-    # df.drop('tags', axis=1, inplace=True)
+def create_dataset(train_df, test_df):
+    train_dataset = Dataset.from_pandas(train_df)
+    test_dataset = Dataset.from_pandas(test_df)
 
-    return df
+    dataset = DatasetDict()
+
+    dataset['train'] = train_dataset
+    dataset['test'] = test_dataset
+
+    return dataset
+
+def get_tokenizer(model_path="microsoft/deberta-v3-small"):
+    return AutoTokenizer.from_pretrained(model_path)
+
+def get_data_collator():
+    return DataCollatorWithPadding(tokenizer=get_tokenizer())
+
+def get_classes(df):
+    all_tags = ','.join(df["tags"].astype(str))
+
+    individual_tags = all_tags.split(",")
+    
+    unique_classes = set([tag.strip() for tag in individual_tags])
+    
+    return list(unique_classes)
+
+def get_id2class(classes):
+    id2class = {id:class_ for class_, id in enumerate(classes)}
+    return id2class
+
+def get_class2id(classes):
+    class2id = {class_:id for id, class_ in enumerate(classes)}
+    return class2id
